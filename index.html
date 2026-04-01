@@ -22,18 +22,22 @@
             background-color: var(--bg);
             color: var(--main);
             margin: 0;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
+            /* 修正: スクロールを阻害しない配置に変更 */
+            display: block; 
             -webkit-font-smoothing: antialiased;
         }
 
         .container {
             width: 100%;
             max-width: 420px;
+            margin: 0 auto;
             padding: 40px 20px;
             box-sizing: border-box;
             text-align: center;
+            /* 修正: コンテンツ量に応じて伸びるように設定 */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; }
@@ -44,7 +48,6 @@
             margin-bottom: 25px;
         }
 
-        /* Textareaによる自動高さ調整対応 */
         .input-box {
             width: 100%;
             min-height: 60px;
@@ -87,9 +90,11 @@
             font-size: 0.7rem;
             font-weight: 900;
             color: #bbb;
-            margin: 25px 0 10px 5px;
+            margin: 35px 0 12px 5px; /* 余白を広げてセクションを強調 */
             text-transform: uppercase;
             letter-spacing: 1px;
+            border-bottom: 1px solid #f5f5f5;
+            padding-bottom: 5px;
         }
 
         .result-list {
@@ -117,10 +122,6 @@
         .label { font-size: 0.6rem; color: #aaa; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
         .value { font-size: 0.9rem; font-weight: 700; color: var(--main); word-break: break-all; line-height: 1.4; }
         
-        /* パラメータ用スタイル */
-        .param-key { color: #888; font-weight: 800; margin-right: 5px; }
-        .param-val { color: var(--main); }
-
         .copy-hint {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -136,7 +137,7 @@
             pointer-events: none;
         }
 
-        footer { margin-top: 50px; padding-bottom: 30px; font-size: 11px; color: #aaa; line-height: 1.8; }
+        footer { margin-top: auto; padding: 60px 0 30px; font-size: 11px; color: #aaa; line-height: 1.8; }
         .footer-btns { margin-top: 30px; }
         .kofi-btn {
             display: inline-block; background: var(--main); color: #fff;
@@ -219,15 +220,12 @@
     function renderResults(input) {
         resultArea.innerHTML = '';
 
-        // 1. 基本デコード
         let decoded = '';
         try { decoded = decodeURIComponent(input.replace(/\+/g, ' ')); } catch(e) { decoded = input; }
-        
-        // 2. エンコード
         let encoded = encodeURIComponent(input);
 
-        // セクション: Core
-        const coreHtml = `
+        // Core Section
+        let html = `
             <div class="section-title">Analysis</div>
             <div class="result-list">
                 <div class="result-card" onclick="copyText(this)">
@@ -242,14 +240,13 @@
                 </div>
             </div>
         `;
-        resultArea.insertAdjacentHTML('beforeend', coreHtml);
 
-        // 3. ディープデコード（二重エンコード検知）
+        // Deep Unmask Section
         if (decoded.includes('%')) {
             try {
                 const deepDecoded = decodeURIComponent(decoded.replace(/\+/g, ' '));
                 if (deepDecoded !== decoded) {
-                    const deepHtml = `
+                    html += `
                         <div class="section-title">Deep Unmask</div>
                         <div class="result-list">
                             <div class="result-card" onclick="copyText(this)">
@@ -259,21 +256,21 @@
                             </div>
                         </div>
                     `;
-                    resultArea.insertAdjacentHTML('beforeend', deepHtml);
                 }
             } catch(e) {}
         }
 
-        // 4. パラメータ分解
+        // Parameters Section
         try {
-            const urlObj = new URL(input.startsWith('http') ? input : 'https://' + input);
+            const urlStr = input.startsWith('http') ? input : 'https://' + input;
+            const urlObj = new URL(urlStr);
             const params = new URLSearchParams(urlObj.search);
             const paramEntries = Array.from(params.entries());
 
             if (paramEntries.length > 0) {
-                let paramHtml = `<div class="section-title">Parameters</div><div class="result-list">`;
+                html += `<div class="section-title">Parameters</div><div class="result-list">`;
                 paramEntries.forEach(([key, val]) => {
-                    paramHtml += `
+                    html += `
                         <div class="result-card" onclick="copyText(this)">
                             <span class="label">Key: ${key}</span>
                             <span class="value">${val}</span>
@@ -281,12 +278,11 @@
                         </div>
                     `;
                 });
-                paramHtml += `</div>`;
-                resultArea.insertAdjacentHTML('beforeend', paramHtml);
+                html += `</div>`;
             }
-        } catch(e) {
-            // URL形式でない場合はパラメータ分解をスキップ
-        }
+        } catch(e) {}
+
+        resultArea.innerHTML = html;
     }
 
     function copyText(el) {
