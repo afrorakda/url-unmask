@@ -44,14 +44,16 @@
             margin-bottom: 25px;
         }
 
+        /* Textareaによる自動高さ調整対応 */
         .input-box {
             width: 100%;
+            min-height: 60px;
             padding: 18px;
             padding-right: 65px;
             border: 2px solid var(--accent);
             border-radius: var(--radius);
             background: var(--input-bg);
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 700;
             color: var(--main) !important;
             box-sizing: border-box;
@@ -59,13 +61,16 @@
             -webkit-appearance: none;
             -webkit-text-fill-color: var(--main) !important;
             opacity: 1 !important;
+            resize: none;
+            overflow: hidden;
+            line-height: 1.4;
         }
         .input-box::placeholder { color: #888; -webkit-text-fill-color: #888; }
 
         .clear-btn {
             position: absolute;
             right: 15px;
-            bottom: 11px;
+            top: 15px;
             background: none;
             border: none;
             color: #999;
@@ -76,6 +81,16 @@
             display: none;
         }
         .clear-btn.active { display: block; }
+
+        .section-title {
+            text-align: left;
+            font-size: 0.7rem;
+            font-weight: 900;
+            color: #bbb;
+            margin: 25px 0 10px 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
 
         .result-list {
             display: flex;
@@ -99,8 +114,12 @@
         }
         .result-card:active { transform: scale(0.97); background-color: var(--input-bg); }
 
-        .label { font-size: 0.65rem; color: #999; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
-        .value { font-size: 0.95rem; font-weight: 700; color: var(--main); word-break: break-all; line-height: 1.4; }
+        .label { font-size: 0.6rem; color: #aaa; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
+        .value { font-size: 0.9rem; font-weight: 700; color: var(--main); word-break: break-all; line-height: 1.4; }
+        
+        /* パラメータ用スタイル */
+        .param-key { color: #888; font-weight: 800; margin-right: 5px; }
+        .param-val { color: var(--main); }
 
         .copy-hint {
             position: absolute;
@@ -110,14 +129,14 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 800;
             opacity: 0;
             transition: opacity 0.2s;
             pointer-events: none;
         }
 
-        footer { margin-top: 50px; font-size: 11px; color: #aaa; line-height: 1.8; }
+        footer { margin-top: 50px; padding-bottom: 30px; font-size: 11px; color: #aaa; line-height: 1.8; }
         .footer-btns { margin-top: 30px; }
         .kofi-btn {
             display: inline-block; background: var(--main); color: #fff;
@@ -145,14 +164,14 @@
 
 <div class="container">
     <h1>URL Unmask</h1>
-    <p class="subtitle">Quick URL Decoder & Encoder.</p>
+    <p class="subtitle">Ultimate URL Decoder & Explorer.</p>
 
     <div class="input-container">
-        <input type="text" class="input-box" id="urlInput" placeholder="Paste URL or Text" oninput="process()" spellcheck="false">
+        <textarea class="input-box" id="urlInput" placeholder="Paste URL here..." oninput="autoHeight(); process();" rows="1" spellcheck="false"></textarea>
         <button class="clear-btn" id="clearBtn" onclick="clearInput()">clr</button>
     </div>
 
-    <div class="result-list" id="resultArea">
+    <div id="resultArea">
         </div>
 
     <div class="footer-btns">
@@ -181,6 +200,11 @@
     const resultArea = document.getElementById('resultArea');
     const clearBtn = document.getElementById('clearBtn');
 
+    function autoHeight() {
+        urlInput.style.height = 'auto';
+        urlInput.style.height = urlInput.scrollHeight + 'px';
+    }
+
     function process() {
         const val = urlInput.value.trim();
         if (val.length > 0) {
@@ -193,45 +217,80 @@
     }
 
     function renderResults(input) {
-        let decoded = '';
-        let encoded = '';
-        let error = null;
-
-        try {
-            // デコード処理
-            decoded = decodeURIComponent(input.replace(/\+/g, ' '));
-        } catch (e) {
-            decoded = "Invalid encoding format.";
-        }
-
-        try {
-            // エンコード処理
-            encoded = encodeURIComponent(input);
-        } catch (e) {
-            encoded = "Encoding failed.";
-        }
-
-        const data = [
-            { label: 'Decoded (Unmasked)', val: decoded },
-            { label: 'Encoded (Masked)', val: encoded }
-        ];
-
         resultArea.innerHTML = '';
-        data.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'result-card';
-            card.onclick = () => copyText(item.val, card);
-            card.innerHTML = `
-                <span class="label">${item.label}</span>
-                <span class="value">${item.val}</span>
-                <div class="copy-hint">COPIED!</div>
-            `;
-            resultArea.appendChild(card);
-        });
+
+        // 1. 基本デコード
+        let decoded = '';
+        try { decoded = decodeURIComponent(input.replace(/\+/g, ' ')); } catch(e) { decoded = input; }
+        
+        // 2. エンコード
+        let encoded = encodeURIComponent(input);
+
+        // セクション: Core
+        const coreHtml = `
+            <div class="section-title">Analysis</div>
+            <div class="result-list">
+                <div class="result-card" onclick="copyText(this)">
+                    <span class="label">Decoded (Unmasked)</span>
+                    <span class="value">${decoded}</span>
+                    <div class="copy-hint">COPIED!</div>
+                </div>
+                <div class="result-card" onclick="copyText(this)">
+                    <span class="label">Encoded (Masked)</span>
+                    <span class="value">${encoded}</span>
+                    <div class="copy-hint">COPIED!</div>
+                </div>
+            </div>
+        `;
+        resultArea.insertAdjacentHTML('beforeend', coreHtml);
+
+        // 3. ディープデコード（二重エンコード検知）
+        if (decoded.includes('%')) {
+            try {
+                const deepDecoded = decodeURIComponent(decoded.replace(/\+/g, ' '));
+                if (deepDecoded !== decoded) {
+                    const deepHtml = `
+                        <div class="section-title">Deep Unmask</div>
+                        <div class="result-list">
+                            <div class="result-card" onclick="copyText(this)">
+                                <span class="label">Double Decoded</span>
+                                <span class="value">${deepDecoded}</span>
+                                <div class="copy-hint">COPIED!</div>
+                            </div>
+                        </div>
+                    `;
+                    resultArea.insertAdjacentHTML('beforeend', deepHtml);
+                }
+            } catch(e) {}
+        }
+
+        // 4. パラメータ分解
+        try {
+            const urlObj = new URL(input.startsWith('http') ? input : 'https://' + input);
+            const params = new URLSearchParams(urlObj.search);
+            const paramEntries = Array.from(params.entries());
+
+            if (paramEntries.length > 0) {
+                let paramHtml = `<div class="section-title">Parameters</div><div class="result-list">`;
+                paramEntries.forEach(([key, val]) => {
+                    paramHtml += `
+                        <div class="result-card" onclick="copyText(this)">
+                            <span class="label">Key: ${key}</span>
+                            <span class="value">${val}</span>
+                            <div class="copy-hint">COPIED!</div>
+                        </div>
+                    `;
+                });
+                paramHtml += `</div>`;
+                resultArea.insertAdjacentHTML('beforeend', paramHtml);
+            }
+        } catch(e) {
+            // URL形式でない場合はパラメータ分解をスキップ
+        }
     }
 
-    function copyText(text, el) {
-        if (!text || text.includes("fail") || text.includes("Invalid")) return;
+    function copyText(el) {
+        const text = el.querySelector('.value').textContent;
         navigator.clipboard.writeText(text).then(() => {
             const hint = el.querySelector('.copy-hint');
             hint.style.opacity = '1';
@@ -241,6 +300,7 @@
 
     function clearInput() {
         urlInput.value = '';
+        urlInput.style.height = 'auto';
         clearBtn.classList.remove('active');
         resultArea.innerHTML = '';
         urlInput.focus();
