@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>URL Unmask</title>
+    
+    <link rel="icon" href="image_55.png">
+    <link rel="apple-touch-icon" href="image_55.png">
+
+    <style>
+        :root {
+            --main: #333;
+            --bg: #fff;
+            --accent: #eee;
+            --input-bg: #fafafa;
+            --radius: 15px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--main);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        h1 { font-size: 1.8rem; font-weight: 800; margin-bottom: 8px; letter-spacing: -1px; }
+        .subtitle { font-size: 0.85rem; color: #666; font-weight: 500; margin-bottom: 30px; }
+
+        .input-container {
+            position: relative;
+            margin-bottom: 25px;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 18px;
+            padding-right: 65px;
+            border: 2px solid var(--accent);
+            border-radius: var(--radius);
+            background: var(--input-bg);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--main) !important;
+            box-sizing: border-box;
+            outline: none;
+            -webkit-appearance: none;
+            -webkit-text-fill-color: var(--main) !important;
+            opacity: 1 !important;
+        }
+        .input-box::placeholder { color: #888; -webkit-text-fill-color: #888; }
+
+        .clear-btn {
+            position: absolute;
+            right: 15px;
+            bottom: 11px;
+            background: none;
+            border: none;
+            color: #999;
+            font-size: 0.9rem;
+            font-weight: 800;
+            cursor: pointer;
+            padding: 5px 8px;
+            display: none;
+        }
+        .clear-btn.active { display: block; }
+
+        .result-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .result-card {
+            background: #fff;
+            border: 1px solid #f0f0f0;
+            border-radius: var(--radius);
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .result-card:active { transform: scale(0.97); background-color: var(--input-bg); }
+
+        .label { font-size: 0.65rem; color: #999; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
+        .value { font-size: 0.95rem; font-weight: 700; color: var(--main); word-break: break-all; line-height: 1.4; }
+
+        .copy-hint {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(51, 51, 51, 0.9);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 800;
+            opacity: 0;
+            transition: opacity 0.2s;
+            pointer-events: none;
+        }
+
+        footer { margin-top: 50px; font-size: 11px; color: #aaa; line-height: 1.8; }
+        .footer-btns { margin-top: 30px; }
+        .kofi-btn {
+            display: inline-block; background: var(--main); color: #fff;
+            padding: 12px 25px; border-radius: var(--radius);
+            text-decoration: none; font-weight: bold; font-size: 14px; margin-bottom: 12px;
+        }
+        .home-btn {
+            display: block; width: 60%; margin: 0 auto; background: var(--accent);
+            color: var(--main); border: none; padding: 10px;
+            border-radius: var(--radius); font-weight: 700; font-size: 13px; cursor: pointer;
+        }
+
+        #modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 100;
+        }
+        .modal-content {
+            background: #fff; width: 85%; max-width: 320px; padding: 30px;
+            border-radius: var(--radius); text-align: left; position: relative;
+        }
+        .close-x { position: absolute; top: 15px; right: 20px; font-size: 20px; color: #ccc; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>URL Unmask</h1>
+    <p class="subtitle">Quick URL Decoder & Encoder.</p>
+
+    <div class="input-container">
+        <input type="text" class="input-box" id="urlInput" placeholder="Paste URL or Text" oninput="process()" spellcheck="false">
+        <button class="clear-btn" id="clearBtn" onclick="clearInput()">clr</button>
+    </div>
+
+    <div class="result-list" id="resultArea">
+        </div>
+
+    <div class="footer-btns">
+        <a href="https://ko-fi.com/afrorakda" target="_blank" class="kofi-btn">☕️buy me a coffee</a>
+        <button class="home-btn" onclick="showModal()">Add to Home Screen</button>
+    </div>
+
+    <footer>
+        <div>No login / No tracking / No ads / Browser only</div>
+        <div>Privacy Policy / afrorakda © 2026</div>
+    </footer>
+</div>
+
+<div id="modal" onclick="hideModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-x" onclick="hideModal()">×</span>
+        <h3>📱 Install</h3>
+        <p>Add to your home screen.</p>
+        <p>🍏 <strong>iPhone (Safari):</strong><br>Tap Share, then Add to Home Screen.</p>
+        <p>🤖 <strong>Android (Chrome):</strong><br>Tap Menu (⋮), then Add to Home Screen.</p>
+    </div>
+</div>
+
+<script>
+    const urlInput = document.getElementById('urlInput');
+    const resultArea = document.getElementById('resultArea');
+    const clearBtn = document.getElementById('clearBtn');
+
+    function process() {
+        const val = urlInput.value.trim();
+        if (val.length > 0) {
+            clearBtn.classList.add('active');
+            renderResults(val);
+        } else {
+            clearBtn.classList.remove('active');
+            resultArea.innerHTML = '';
+        }
+    }
+
+    function renderResults(input) {
+        let decoded = '';
+        let encoded = '';
+        let error = null;
+
+        try {
+            // デコード処理
+            decoded = decodeURIComponent(input.replace(/\+/g, ' '));
+        } catch (e) {
+            decoded = "Invalid encoding format.";
+        }
+
+        try {
+            // エンコード処理
+            encoded = encodeURIComponent(input);
+        } catch (e) {
+            encoded = "Encoding failed.";
+        }
+
+        const data = [
+            { label: 'Decoded (Unmasked)', val: decoded },
+            { label: 'Encoded (Masked)', val: encoded }
+        ];
+
+        resultArea.innerHTML = '';
+        data.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.onclick = () => copyText(item.val, card);
+            card.innerHTML = `
+                <span class="label">${item.label}</span>
+                <span class="value">${item.val}</span>
+                <div class="copy-hint">COPIED!</div>
+            `;
+            resultArea.appendChild(card);
+        });
+    }
+
+    function copyText(text, el) {
+        if (!text || text.includes("fail") || text.includes("Invalid")) return;
+        navigator.clipboard.writeText(text).then(() => {
+            const hint = el.querySelector('.copy-hint');
+            hint.style.opacity = '1';
+            setTimeout(() => { hint.style.opacity = '0'; }, 800);
+        });
+    }
+
+    function clearInput() {
+        urlInput.value = '';
+        clearBtn.classList.remove('active');
+        resultArea.innerHTML = '';
+        urlInput.focus();
+    }
+
+    function showModal() { document.getElementById('modal').style.display = 'flex'; }
+    function hideModal() { document.getElementById('modal').style.display = 'none'; }
+</script>
+
+</body>
+</html>
